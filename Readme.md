@@ -1,64 +1,68 @@
-Introduction
-What the article/code snippet does, why it's useful, the problem it solves etc.
+# Introduction
 
-Background
-(Optional) Is there any background to this article that may be useful such as an introduction to the basic ideas presented?
+I would like to share my idea of simplifying the update of Let's Encypt certificates in a container environment. My favorite web hosting platform is Docker. Therefore, to implement web applications I use Docker containers running on Linux VPS. In this environment, I have one container with a nginx proxy server to which other containers with web applications are connected. However, for the implementation of the HTTPS protocol for outdoor communication, I use free Let's Encypt certificates, which I manage using the Certbot tool. Although the described environment is undoubtedly a popular and great solution, it causes some problems.
 
-Using the code
-A brief description of how to use the article or code. The class names, the methods and properties, any tricks or tips.
+Namely, without additional tools, I must remember to copy the certificate to the proxy server after renewing the certificate and then manually reload the website that uses the certificate. It may not be a difficult task but it requires constant attention, which can be directed to more interesting activities. My idea of solving this small problem is quite simple and at the same time quite flexible. It also allows me to avoid restarting the proxy server.
 
-Blocks of code should be set as style "Formatted" like this:
+# Background
 
-//
-// Any source code blocks look like this
-//
+The idea is to use the Certbot timer, which is responsible for automatic, cyclical renewal of certificates. Certbot installs on the system timer service called `certbot.service`, which automatically launches the process of renewing installed certificates from time to time.
 
+For implementation, I wrote a few simple scripts that can be freely configured. These scripts install on the system two additional services that work with the Certbot timer. The first service I named `certbot-renewed-copy.service` is responsible for automatically copying renewed certificates to the proxy directory. The second service, called `certbot-post-renewal-reload.service` deals with reloading web application containers when certificates are renewed. The proxy server container is not reloaded, this only applies to application containers.
 
-Remember to set the Language of your code snippet using the Language dropdown.
+Wherever possible, Certbot installs certificates using the webroot method, because it does not require you to disable the proxy server using port 80.
 
-Use the "var" button to to wrap Variable or class names in <code> tags like this.
+I assumed that the web application containers are managed using the Docker Compose tool. In the configuration file of this tool, for a given container (docker-compose.yml), the domain names corresponding to the installed certificates should be specified in the `environment: VIRTUAL_HOST` parameter.
 
-Points of Interest
-Did you learn anything interesting/fun/annoying while writing the code? Did you do anything particularly clever or wild or zany?
+In addition, I assume that Certbot installs the certificates in the standard directory `/etc/letsencrypt/live`.
 
+Launched services save their logs to a standard journal. Therefore, they can be viewed in the status of a given service or using the journalctl tool.
 
-Chcia³bym podzieliæ siê moim pomys³em na uproszczenie aktualizacji certyfikatów Letsencypt w œrodowisku kontenerowym.
-Moj¹ ulubion¹ platform¹ do hostingu aplikacji web jest docker.
-Dlatego, do wdra¿ania aplikacji web korzystam z kontenerów docker dzia³aj¹cych na linuksowym VPS. W takim œrodowisku mam jeden kontener z serwerem proxy nginx, do którego pod³¹czone s¹ inne kontenery z aplikacjami web.
-Natomiast, do wdro¿enia protoko³u HTTPS do kounikacji na zewn¹trz u¿ywam darmowych certyfikatów letsencypt, którymi zarz¹dzam za pomoc¹ narzêdzia certbot. 
-Choæ opisane œrodowisko jest niew¹tpliwie popularnym i œwietnym rozwi¹zaniem, to stwarza pewne problemy. 
-Mianowicie, bez dodatkowych narzêdzi, muszê pamiêtaæ o tym aby po odnowieniu certyfikatu skopiowaæ go do folderu serwera proxy a nastêpnie rêcznie prze³adowaæ serwis, który z tego certyfikatu korzysta.
-Mo¿e nie jest to trudne zadanie ale wymaga ci¹g³ej uwagi, któr¹ mo¿na przecie¿ skierowaæ na ciekawsze zajêcia.
-Mój pomys³ na rozwi¹zanie tego ma³ego problemu jest ca³kiem prosty i jednoczeœnie doœæ elastyczny. Pozwala mi równie¿ unikn¹æ restartu serwera proxy.
+I tested this solution on Debian 9 and Ubuntu 16.04 Linux distributions.
 
-Pomys³ polega na wykorzystaniu timera certbota, który odpowiada za automatyczne, cykliczne odnawianie certyfikatów. 
-Certbot instaluje w systemie serwis timera o nazwie "certbot.service", który automatycznie uruchamia co jakiœ czas proces odnawiania zainstalowanych certfikatów.
-W celu implementacji napisa³em kilku prostych skryptów, które mo¿na dowolnie konfigurowaæ. Skrypty te instaluj¹ w systemie dwa dodatkowe serwisy, które wspó³pracuj¹ z timerem certbota.
-Pierwszy z serwisów, który nazwa³em "certbot-renewed-copy.service" odpowiada za automatyczne kopiowanie odnowionych certyfikatów do foldera proxy.
-Drugi serwis, nazwany "certbot-post-renewal-reload.service" zajmuje siê prze³adowaniem kontenerów aplikacji web w przypadku odnowienia certyfikatów.
-Kontener serwera proxy nie jest prze³adowywany, dotyczy to tylko kontenerów aplikacji.
-Tam, gdzie to mo¿liwe, sposób instalowania certyfikatów przez certbota polega na metodzie webroot, poniewa¿ nie wymaga ona wy³¹czenia serwera proxy u¿ywaj¹cego portu 80.
-Za³o¿y³em, ¿e kontenery aplikacji web zarz¹dzane s¹ za pomoc¹ narzêdzia docker-compose. W pliku konfiguracji tego narzêdzia, dla danego kontenera (docker-compose.yml), powinny byæ okreœlone w parametrze "environment:VIRTUAL_HOST" nazwy domen odpowiadaj¹ce zainstalowanym certyfikatom.
-Ponadto zak³adam, ¿e certbot instaluje certyfikaty w standardowym folderze /etc/letsencrypt/live.
-Uruchomione serwisy zapisuj¹ swoje logi do standardowego journala. Mo¿na je zatem przejrzeæ w statusie danego serwisu lub za pomoc¹ narzêdzia journalctl.
-Opisywane rozwi¹zanie przetestowa³em na dystrybucjach linuxa debian 9 i ubuntu 16.
+# Using the code
 
-Zanim rozpoczniesz instalowanie, skopiuj wszystkie pobrane pliki do wybranego folderu.
-Procedura instalacji polega na wczeœniejszym dostosowaniu treœci plików konfiguracyjnych a nastêpnie uruchomieniu skryptu instaluj¹cego serwisy.
-W pliku "config.copy.cf" trzeba wpisaæ listê domen certyfikatów, które bêd¹ kopiowane (pole "certificates") oraz miejsce docelowe, gdzie zostan¹ one skopiowane dla serwera proxy (pole "destination").
-Przyk³ad:
-certificates = domain.com,sample.domain.com
+Before starting the installation, copy all downloaded files into your directory of choice.
+
+The installation procedure consists, in first, customizing the contents of configuration files and then running the script to install the services. 
+
+In the `config.copy.cf` file, you should edit the list of certificate domains that will be copied (`certificates` field) and the destination directory path where they will be copied for the proxy server (`destination` field).
+
+For example:
+
+```
+certificates = domain.com, sub.domain.com
 destination = /path/to/proxy/certs
-W pliku "config.reload.cf", w polu "certs_path" wpisz t¹ sam¹ œcie¿kê do folderu serwera proxy, gdzie bêd¹ kopiowane certyfikaty:
+```
+
+In the `config.reload.cf` file, in the `certs_path` field, enter the same path to the proxy server directory as above where the certificates will be copied:
+
+```
 certs_path = /path/to/proxy/certs
-Plik "config.location.cf" zawiera listê wszystkich lokalizacji, w których znajduj¹ siê pliki docker-compose.yml przeznaczone do uruchamiania kontenerów dla aplikacji, które zamierzamy automatycznie prze³adowaæ po odnowieniu certyfikatów.
-Przyk³ad:
+```
+
+The `config.location.cf` file contains a list of all locations of `docker-compose.yml` files which are intended for launching containers for applications that we intend to automatically reload after certificate renewal.
+
+For example:
+
+```
 /path/to/docked/web/app1
 /path/to/docked/api2
-Do zainstalowania skryptów w systemie i uruchomienia opisywanych wy¿ej serwisów przygotowa³em prosty skrypt o nazwie "install.sh". 
-Uruchom go w ten sposób:
+```
+
+To install the scripts on the system and run the services described above, I prepared a simple script called `install.sh`.
+
+Run it this way:
+
+```bash
 $ sudo bash install.sh
-Status i logi zainstalowanych serwisów mo¿na sprawdziæ za pomoc¹ polecenia:
+```
+
+The status and logs of installed services can be checked using these commands:
+
+```bash
 $ sudo systemctl status certbot-renewed-copy.service
 $ sudo systemctl status certbot-post-renewal-reload.service
+```
+
 
