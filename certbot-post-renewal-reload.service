@@ -1,0 +1,13 @@
+[Unit]
+Description=Reload docked services
+After=certbot-renewed-copy.service
+
+[Service]
+Type=oneshot
+#ExecStartPre=/bin/sleep 30
+ExecStart=/usr/local/bin/certbot-post-renewal-reload.sh
+
+StandardOutput=journal
+
+[Install]
+WantedBy=certbot-renewed-copy.service

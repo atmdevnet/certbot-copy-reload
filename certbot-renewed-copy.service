@@ -1,0 +1,13 @@
+[Unit]
+Description=Copies renewed letsencrypt certificates
+After=certbot.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 300
+ExecStart=/usr/local/bin/certbot-renewed-copy.sh
+
+StandardOutput=journal
+
+[Install]
+WantedBy=certbot.service

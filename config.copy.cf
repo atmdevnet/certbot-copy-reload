@@ -1,0 +1,2 @@
+certificates = atmdev.net,mail.atmdev.net,monitor.atmdev.net
+destination = /home/amsm/docked/nginx-proxy/certs
