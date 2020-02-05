@@ -6,7 +6,7 @@ Namely, without additional tools, I must remember to copy the certificate to the
 
 # Background
 
-The idea is to use the Certbot timer, which is responsible for automatic, cyclical renewal of certificates. Certbot installs on the system timer service called `certbot.service`, which automatically launches the process of renewing installed certificates from time to time.
+The idea is to use the Certbot timer, which is responsible for automatic and cyclical renewal of certificates. Certbot installs on the system timer service called `certbot.service`, which automatically launches the process of renewing installed certificates from time to time.
 
 For implementation, I wrote a few simple scripts that can be freely configured. These scripts install on the system two additional services that work with the Certbot timer. The first service I named `certbot-renewed-copy.service` is responsible for automatically copying renewed certificates to the proxy directory. The second service, called `certbot-post-renewal-reload.service` deals with reloading web application containers when certificates are renewed. The proxy server container is not reloaded, this only applies to application containers.
 
