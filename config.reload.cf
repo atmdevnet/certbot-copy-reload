@@ -1,2 +1,2 @@
-certs_path=/home/amsm/docked/nginx-proxy/certs/
+certs_path=/path/to/docked/nginx-proxy/certs/
 last_reload_path=/etc/certbot-post-renewal-reload/last-reload
